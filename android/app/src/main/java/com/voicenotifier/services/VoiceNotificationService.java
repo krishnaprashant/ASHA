@@ -67,13 +67,14 @@ public class VoiceNotificationService extends NotificationListenerService {
             // Get app name
             String appName = getAppName(packageName);
             
-            // Build message to speak
+            // Build message (for future API integration)
             String messageToSpeak = buildMessage(appName, title, text);
             
-            // Speak the notification
+            // Log the notification (will be sent to API in future)
             if (messageToSpeak != null && !messageToSpeak.isEmpty()) {
-                Log.d(TAG, "Speaking notification: " + messageToSpeak);
-                ttsManager.speakWithDelay(messageToSpeak, 500); // Small delay to avoid overlap
+                Log.d(TAG, "Notification received: " + messageToSpeak);
+                // TODO: Send to API endpoint in future
+                // ttsManager.speakWithDelay(messageToSpeak, 500); // Disabled - keeping silent
             }
             
         } catch (Exception e) {

@@ -66,12 +66,20 @@ function App(): React.JSX.Element {
     }
   };
 
+  const handleTestVoice = async () => {
+    try {
+      await VoiceServiceModule.testVoice();
+    } catch (error) {
+      Alert.alert('Error', 'Failed to test voice: ' + error);
+    }
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#fff" />
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.header}>
-          <Text style={styles.title}>🔊 ASHA</Text>
+          <Text style={styles.title}>🔊 RAVI</Text>
           <Text style={styles.subtitle}>Background Voice Notifications</Text>
         </View>
 
@@ -118,6 +126,12 @@ function App(): React.JSX.Element {
             <Text style={[styles.buttonText, styles.secondaryButtonText]}>
               Stop Service
             </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.button, styles.testButton]}
+            onPress={handleTestVoice}>
+            <Text style={styles.buttonText}>🔊 Test Voice</Text>
           </TouchableOpacity>
         </View>
 
@@ -243,6 +257,9 @@ const styles = StyleSheet.create({
   },
   secondaryButtonText: {
     color: '#2196F3',
+  },
+  testButton: {
+    backgroundColor: '#FF9800',
   },
   settingsSection: {
     marginTop: 20,

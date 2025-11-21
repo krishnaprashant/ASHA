@@ -33,6 +33,7 @@ public class BatteryMonitorService extends Service {
     private int lastBatteryLevel = -1;
     private boolean wasCharging = false;
     private boolean hasSpokenLowBatteryAlert = false;
+    private boolean hasSpokenBatteryHealthAlert = false;
 
     @Override
     public void onCreate() {
@@ -134,7 +135,13 @@ public class BatteryMonitorService extends Service {
         boolean isCharging = status == BatteryManager.BATTERY_STATUS_CHARGING ||
                            status == BatteryManager.BATTERY_STATUS_FULL;
 
-        Log.d(TAG, "Battery: " + batteryPct + "%, Charging: " + isCharging);
+        // Get battery health
+        int health = intent.getIntExtra(BatteryManager.EXTRA_HEALTH, -1);
+
+        Log.d(TAG, "Battery: " + batteryPct + "%, Charging: " + isCharging + ", Health: " + health);
+
+        // Check battery health
+        checkBatteryHealth(health);
 
         // Check for low battery alert
         if (batteryPct < LOW_BATTERY_THRESHOLD && !isCharging) {
@@ -164,8 +171,8 @@ public class BatteryMonitorService extends Service {
      * Speak low battery alert
      */
     private void speakBatteryAlert(int batteryLevel) {
-        String message = "Battery is less than " + LOW_BATTERY_THRESHOLD + " percent. " +
-                        "Current level is " + batteryLevel + " percent.";
+        String message = "बैटरी " + LOW_BATTERY_THRESHOLD + " प्रतिशत से कम है। " +
+                        "वर्तमान स्तर " + batteryLevel + " प्रतिशत है।";
         ttsManager.speak(message);
         Log.d(TAG, "Low battery alert spoken: " + batteryLevel + "%");
     }
@@ -174,7 +181,7 @@ public class BatteryMonitorService extends Service {
      * Speak charging started message
      */
     private void speakChargingStarted() {
-        ttsManager.speak("Charging started.");
+        ttsManager.speak("चार्जिंग शुरू हो गई है।");
         Log.d(TAG, "Charging started alert spoken");
     }
 
@@ -182,8 +189,44 @@ public class BatteryMonitorService extends Service {
      * Speak charging stopped message
      */
     private void speakChargingStopped() {
-        ttsManager.speak("Charging stopped.");
+        ttsManager.speak("चार्जिंग बंद हो गई है।");
         Log.d(TAG, "Charging stopped alert spoken");
+    }
+
+    /**
+     * Check battery health and alert if poor
+     */
+    private void checkBatteryHealth(int health) {
+        String healthStatus = null;
+        
+        switch (health) {
+            case BatteryManager.BATTERY_HEALTH_DEAD:
+                healthStatus = "बैटरी खराब हो गई है।"; // Battery is dead
+                break;
+            case BatteryManager.BATTERY_HEALTH_OVERHEAT:
+                healthStatus = "बैटरी अधिक गर्म हो रही है। कृपया डिवाइस को ठंडा करें।"; // Battery is overheating. Please cool the device.
+                break;
+            case BatteryManager.BATTERY_HEALTH_OVER_VOLTAGE:
+                healthStatus = "बैटरी में अधिक वोल्टेज है।"; // Battery has over voltage
+                break;
+            case BatteryManager.BATTERY_HEALTH_COLD:
+                healthStatus = "बैटरी बहुत ठंडी है।"; // Battery is too cold
+                break;
+            case BatteryManager.BATTERY_HEALTH_GOOD:
+                // Battery is good, reset the flag
+                hasSpokenBatteryHealthAlert = false;
+                return;
+            default:
+                // Unknown or unspecified, don't alert
+                return;
+        }
+        
+        // Speak the health alert only once until it becomes good again
+        if (healthStatus != null && !hasSpokenBatteryHealthAlert) {
+            ttsManager.speak(healthStatus);
+            hasSpokenBatteryHealthAlert = true;
+            Log.d(TAG, "Battery health alert spoken: " + health);
+        }
     }
 
     @Override

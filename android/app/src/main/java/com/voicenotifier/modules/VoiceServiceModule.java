@@ -6,12 +6,15 @@ import android.os.Build;
 import android.provider.Settings;
 import android.util.Log;
 import androidx.annotation.NonNull;
+import com.facebook.react.bridge.Arguments;
 import com.facebook.react.bridge.Promise;
 import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.bridge.ReactContextBaseJavaModule;
 import com.facebook.react.bridge.ReactMethod;
+import com.facebook.react.bridge.WritableArray;
 import com.voicenotifier.services.BatteryMonitorService;
 import com.voicenotifier.services.VoiceNotificationService;
+import com.voicenotifier.tts.VoiceTTSManager;
 
 /**
  * React Native module to control Voice Notifier services
@@ -168,6 +171,65 @@ public class VoiceServiceModule extends ReactContextBaseJavaModule {
         } catch (Exception e) {
             Log.e(TAG, "Error stopping services: " + e.getMessage());
             promise.reject("STOP_ERROR", e.getMessage());
+        }
+    }
+
+    /**
+     * Test voice output with a sample message
+     */
+    @ReactMethod
+    public void testVoice(Promise promise) {
+        try {
+            VoiceTTSManager ttsManager = VoiceTTSManager.getInstance(reactContext);
+            ttsManager.speak("यह एक परीक्षण संदेश है। आशा आपकी सेवा में है।");
+            
+            Log.d(TAG, "Test voice played");
+            promise.resolve("Test voice played successfully");
+        } catch (Exception e) {
+            Log.e(TAG, "Error testing voice: " + e.getMessage());
+            promise.reject("TEST_ERROR", e.getMessage());
+        }
+    }
+    
+    /**
+     * Get all available Hindi voices
+     */
+    @ReactMethod
+    public void getAvailableVoices(Promise promise) {
+        try {
+            VoiceTTSManager ttsManager = VoiceTTSManager.getInstance(reactContext);
+            java.util.List<String> voices = ttsManager.getAvailableHindiVoices();
+            
+            WritableArray voiceArray = Arguments.createArray();
+            for (String voiceName : voices) {
+                voiceArray.pushString(voiceName);
+            }
+            
+            promise.resolve(voiceArray);
+        } catch (Exception e) {
+            Log.e(TAG, "Error getting voices: " + e.getMessage());
+            promise.reject("GET_VOICES_ERROR", e.getMessage());
+        }
+    }
+    
+    /**
+     * Test a specific voice by name
+     */
+    @ReactMethod
+    public void testVoiceByName(String voiceName, Promise promise) {
+        try {
+            VoiceTTSManager ttsManager = VoiceTTSManager.getInstance(reactContext);
+            boolean success = ttsManager.setVoiceByName(voiceName);
+            
+            if (success) {
+                ttsManager.speak("यह " + voiceName + " आवाज़ है।");
+                promise.resolve("Testing voice: " + voiceName);
+            } else {
+                promise.reject("VOICE_NOT_FOUND", "Voice not found: " + voiceName);
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Error testing voice: " + e.getMessage());
+            promise.reject("TEST_VOICE_ERROR", e.getMessage());
         }
     }
 }
